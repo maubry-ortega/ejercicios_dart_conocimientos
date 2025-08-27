@@ -1,97 +1,79 @@
 import 'dart:io';
 
 void main() {
-  runCarritoCompras();
+  runEntregasDomicilio();
+}
+
+class Cliente {
+  String nombre;
+  String direccion;
+  String telefono;
+
+  Cliente(this.nombre, this.direccion, this.telefono);
 }
 
 class Producto {
   String nombre;
   double precio;
-  String categoria;
-  bool disponible;
 
-  Producto(this.nombre, this.precio, this.categoria, this.disponible);
+  Producto(this.nombre, this.precio);
 }
 
-void runCarritoCompras() {
+class Pedido {
+  Cliente cliente;
+  List<Producto> productos;
+  double costoDomicilio;
+  int tiempoEntrega; // minutos
+
+  Pedido(this.cliente, this.productos, this.costoDomicilio, this.tiempoEntrega);
+
+  double total() {
+    double subtotal = productos.fold(0, (sum, p) => sum + p.precio);
+    return subtotal + costoDomicilio;
+  }
+}
+
+void runEntregasDomicilio() {
   List<Producto> catalogo = [
-    Producto("Laptop", 1200, "Tecnología", true),
-    Producto("Auriculares", 50, "Accesorios", true),
-    Producto("Camiseta", 25, "Ropa", true),
-    Producto("Zapatos", 80, "Ropa", false),
+    Producto("Pizza", 30),
+    Producto("Hamburguesa", 15),
+    Producto("Gaseosa", 5),
   ];
 
-  List<Producto> carrito = [];
+  print("--- Sistema de Entregas ---");
+  stdout.write("Ingrese nombre: ");
+  String nombre = stdin.readLineSync()!;
+  stdout.write("Ingrese dirección: ");
+  String direccion = stdin.readLineSync()!;
+  stdout.write("Ingrese teléfono: ");
+  String telefono = stdin.readLineSync()!;
+  Cliente cliente = Cliente(nombre, direccion, telefono);
 
+  List<Producto> seleccionados = [];
   while (true) {
-    print("\n--- Carrito de Compras ---");
-    print("1. Ver catálogo");
-    print("2. Agregar producto");
-    print("3. Ver carrito y total");
-    print("4. Salir");
-    stdout.write("Opción: ");
-    String? option = stdin.readLineSync();
-
-    switch (option) {
-      case "1":
-        mostrarCatalogo(catalogo);
-        break;
-      case "2":
-        agregarProducto(catalogo, carrito);
-        break;
-      case "3":
-        mostrarCarrito(carrito);
-        break;
-      case "4":
-        print("👋 Saliendo...");
-        return;
-      default:
-        print("❌ Opción inválida.");
+    print("\n--- Catálogo ---");
+    for (int i = 0; i < catalogo.length; i++) {
+      print("${i + 1}. ${catalogo[i].nombre} - \$${catalogo[i].precio}");
     }
+    print("${catalogo.length + 1}. Finalizar pedido");
+    stdout.write("Opción: ");
+    int? opcion = int.tryParse(stdin.readLineSync() ?? '');
+    if (opcion == null || opcion < 1 || opcion > catalogo.length + 1) {
+      print("❌ Opción inválida.");
+      continue;
+    }
+    if (opcion == catalogo.length + 1) break;
+    seleccionados.add(catalogo[opcion - 1]);
+    print("✅ Producto agregado.");
   }
-}
 
-void mostrarCatalogo(List<Producto> catalogo) {
-  print("\n--- Catálogo ---");
-  for (int i = 0; i < catalogo.length; i++) {
-    var p = catalogo[i];
-    print("${i + 1}. ${p.nombre} - \$${p.precio} (${p.categoria}) [${p.disponible ? "Disponible" : "No disponible"}]");
-  }
-}
-
-void agregarProducto(List<Producto> catalogo, List<Producto> carrito) {
-  mostrarCatalogo(catalogo);
-  stdout.write("Seleccione el número de producto: ");
-  int? index = int.tryParse(stdin.readLineSync() ?? '');
-  if (index == null || index < 1 || index > catalogo.length) {
-    print("❌ Producto inválido.");
-    return;
-  }
-  Producto p = catalogo[index - 1];
-  if (!p.disponible) {
-    print("❌ Producto no disponible.");
-    return;
-  }
-  carrito.add(p);
-  print("✅ Producto agregado.");
-}
-
-void mostrarCarrito(List<Producto> carrito) {
-  if (carrito.isEmpty) {
-    print("🛒 Carrito vacío.");
-    return;
-  }
-  double subtotal = carrito.fold(0, (sum, p) => sum + p.precio);
-  double descuento = subtotal > 100 ? subtotal * 0.1 : 0;
-  double impuestos = (subtotal - descuento) * 0.19;
-  double total = subtotal - descuento + impuestos;
-
-  print("\n--- Carrito ---");
-  for (var p in carrito) {
+  Pedido pedido = Pedido(cliente, seleccionados, 5.0, 30);
+  print("\n--- Resumen del Pedido ---");
+  print("Cliente: ${cliente.nombre}, ${cliente.direccion}, ${cliente.telefono}");
+  for (var p in seleccionados) {
     print("- ${p.nombre} \$${p.precio}");
   }
-  print("Subtotal: \$${subtotal.toStringAsFixed(2)}");
-  print("Descuento: -\$${descuento.toStringAsFixed(2)}");
-  print("Impuestos: +\$${impuestos.toStringAsFixed(2)}");
-  print("Total final: \$${total.toStringAsFixed(2)}");
+  print("Costo domicilio: \$${pedido.costoDomicilio}");
+  print("Tiempo estimado: ${pedido.tiempoEntrega} min");
+  print("Total a pagar: \$${pedido.total()}");
 }
